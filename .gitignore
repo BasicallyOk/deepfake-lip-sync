@@ -134,6 +134,8 @@ test
 train_and_test_set
 dataset
 old_dataset
+old_ds
+
 
 # note
 note.py
