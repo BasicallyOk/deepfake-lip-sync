@@ -196,7 +196,7 @@ def main():
     mp4_file_paths, metafile_path = get_files_and_get_meta_file(raw_data_path)
     metafile_path = metafile_path[0]  # There should be only one metafile in the training set
     meta_dictionary = get_meta_dict(metafile_path)
-    num_loops = 40
+    num_loops = 40 # Number of loops to process the same number of videos.
     for i in range(num_loops):
         start_time = time.time()
         capture_video(ds_path, mp4_file_paths[i], meta_dictionary)
