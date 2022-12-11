@@ -3,20 +3,22 @@ import numpy as np   # linear algebra
 import cv2
 import matplotlib.pyplot as plt
 import random
-# from pathlib import Path
 import os
 import tensorflow as tf
 import re
+# TODO:
+#       Partitioning. I suppose that for a given dataset of size n, training the entire n dataset in a single epoch is
+#           equivalent to training that dataset in 2 epochs, with each epochs's dataset being of n/2 size.
+#       Might make the grab which model to continue automatic too, by saving the model name in a predictable pattern
+#       and grab the latest model based on how many models are there in saved_models.
+#       So sth like model5 is the 5th and latest model in a saved_models folder that has 5 models in there already.
+
 # All lists below are supposed to be lists of numpy arrays.
 x_train = []  # train set
 y_train = []  # train label
 
 x_test = []   # test set
 y_test = []   # test label
-
-# Ratio between train and test
-# train_ratio = 3
-# test_ratio = 2
 
 
 def append_train(img_path: str, label: str):
@@ -75,34 +77,29 @@ def load_file_from_split_dataset(dataset_path: str):
     for img in os.listdir(os.path.join(train_path, "real")):
         counter += 1
         if counter == 5000:
-            counter = 0
             break
         img_path = os.path.join(train_path, "real", img)
         append_train(img_path, "REAL")
-
+    # Reset the value of counter
     counter = 0
     for img in os.listdir(os.path.join(train_path, "fake")):
         counter += 1
         if counter == 5000:
-            counter = 0
             break
         img_path = os.path.join(train_path, "fake", img)
         append_train(img_path, "FAKE")
-
     counter = 0
     # Load test data
     for img in os.listdir(os.path.join(test_path, "real")):
         counter += 1
         if counter == 1000:
-            counter = 0
             break
         img_path = os.path.join(test_path, "real", img)
         append_test(img_path, "REAL")
-
+    counter = 0
     for img in os.listdir(os.path.join(test_path, "fake")):
         counter += 1
         if counter == 1000:
-            counter = 0
             break
         img_path = os.path.join(test_path, "fake", img)
         append_test(img_path, "FAKE")
@@ -161,7 +158,6 @@ def get_path(script_path):
     return match[1]
 
 
-# save_pngs = data_loader.main()
 def main():
     """
     Khoa's new stuff
@@ -169,13 +165,6 @@ def main():
     project_path = get_path(os.path.dirname(__file__))
     dataset_path = os.path.join(project_path, "dataset")
     load_file_from_split_dataset(dataset_path)
-    # path_list = Path("train_and_test_set").rglob(pattern="*.png")
-    # for path in path_list:
-    #     roll = random.randint(1, train_ratio + test_ratio)  # inclusive [a, b] for randint
-    #     if roll <= test_ratio:
-    #         append_test(str(path))
-    #     else:
-    #         append_train(str(path))
     return project_path
 
 
@@ -202,24 +191,85 @@ print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
 # Imported the ones from MNIST database lol. Uhhh... why does it have such a high score...? Overfitting?
 # Looks like 256x256 is the standard
-model = tf.keras.models.Sequential([
-    tf.keras.layers.Conv2D(3, 7, 1, activation='relu', input_shape=(256, 256, 3)),
-    tf.keras.layers.Conv2D(32, 5, (1, 2), activation='relu'),
-    tf.keras.layers.Conv2D(64, 5, 2, activation='relu'),
-    tf.keras.layers.Conv2D(128, 5, 2, activation='relu'),
-    tf.keras.layers.Conv2D(256, 3, 2, activation='relu'),
-    tf.keras.layers.Conv2D(512, 3, 2, activation='relu'),
-    tf.keras.layers.Conv2D(512, 3, 1, activation='relu'),
-    tf.keras.layers.MaxPool2D(2, 2),
-    tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(1, activation='sigmoid'),
-])
-model.compile(optimizer=tf.keras.optimizers.Adam(),
-              loss=tf.keras.losses.BinaryCrossentropy(), metrics=['accuracy', 'mean_absolute_error'])
-model.summary()
 
-model.fit(x_train, y_train, epochs=7)
-save_location = os.path.join(project_path, "saved_models/khoa")
-model.save(save_location)   # TODO: get dotenv working and make this an env variable
+
+def load_or_create_new_model():
+    path = os.path.join(project_path, "saved_models")
+    dirs = os.listdir(path)
+    if len(dirs) == 0:          # turn != to == later.
+        print("No models can be found. Creating a new model now...")
+        new_model = tf.keras.models.Sequential([
+            tf.keras.layers.Conv2D(3, 7, 1, activation='relu', input_shape=(256, 256, 3)),
+            tf.keras.layers.Conv2D(32, 5, (1, 2), activation='relu'),
+            tf.keras.layers.Conv2D(64, 5, 2, activation='relu'),
+            tf.keras.layers.Conv2D(128, 5, 2, activation='relu'),
+            tf.keras.layers.Conv2D(256, 3, 2, activation='relu'),
+            tf.keras.layers.Conv2D(512, 3, 2, activation='relu'),
+            tf.keras.layers.Conv2D(512, 3, 1, activation='relu'),
+            tf.keras.layers.MaxPool2D(2, 2),
+            tf.keras.layers.Flatten(),
+            tf.keras.layers.Dense(1, activation='sigmoid'),
+        ])
+        new_model.compile(optimizer=tf.keras.optimizers.Adam(),
+                          loss=tf.keras.losses.BinaryCrossentropy(), metrics=['accuracy', 'mean_absolute_error'])
+        new_model.summary()
+        return new_model
+    else:
+        # Just get the first one available I think
+        model_path = os.path.join(path, "huy")    # Change dirs[0] to the model of whom you want to load into your
+                                                  # model.
+        print(f"Loading the model from {model_path}")
+        old_model = tf.keras.models.load_model(model_path)
+        old_model.summary()
+        return old_model
+
+
+model = load_or_create_new_model()
+
+save_checkpoint_path = "saved_checkpoints"
+saved_model_path = os.path.join(project_path, "saved_models", "huy")
+save_checkpoint_path = os.path.join(project_path, save_checkpoint_path)
+epochs = 3
+
+ckpt = tf.train.Checkpoint(model)
+manager = tf.train.CheckpointManager(ckpt, save_checkpoint_path, max_to_keep=epochs)
+
+
+# save the checkpoint to the file path...
+# So, does checkpoint get activated after every epoch, or does it get activated after the step?
+# First of all, how to put the save checkpoint code while fitting?
+# Second of all, how to restore check points and continuing running from there.
+#               Is there a way to indicate that the checkpoint has been restored?
+
+def restore_checkpoint():
+    ckpt.restore(manager.latest_checkpoint)
+    if manager.latest_checkpoint:
+        number = re.match(pattern=r".*(.*(\d)$)", string=str(manager.latest_checkpoint))[1]
+        print(f"Restored from {manager.latest_checkpoint}")
+        return int(number)
+    else:
+        print("Intitialize from scratch since no checkpoint is found..")
+        return 0
+
+
+def train():
+    # Maybe only use the checkpoint if there is no saved_models.
+    # If there is, check that there is no checkpoints there, and if there is no checkpoints, then use restore the models
+    # Ok, so, extract the number at the checkpoint file.
+    epochs_passed = restore_checkpoint()
+    num_loops = epochs - epochs_passed
+    print(f"Total epochs: {epochs}\nNumber of epochs gonna be run this session: {num_loops}")
+    for epoch in range(num_loops):
+        print(f"Epoch {epoch} starting now:")
+        model.fit(x_train, y_train)
+        manager.save()
+
+    # delete all checkpoints after the entire run is complete.
+    for file in os.listdir(save_checkpoint_path):
+        os.remove(os.path.join(save_checkpoint_path, file))
+
+
+train()
+model.save(saved_model_path)   # TODO: get dotenv working and make this an env variable
 print("Evaluating model")
 model.evaluate(x_test, y_test)
