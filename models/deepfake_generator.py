@@ -2,6 +2,8 @@ import numpy as np  # linear algebra
 import matplotlib.pyplot as plt
 import scipy.io.wavfile as wav
 import tensorflow as tf
+import tensorflow_addons as tfa
+
 from tensorflow import keras
 from keras import models
 from moviepy.editor import *
@@ -46,7 +48,6 @@ def identity_encoder():
         tf.keras.layers.Flatten(),
         tf.keras.layers.Dense(1024, activation='sigmoid')
     ], name="image")
-    # model.summary()
     return model
 
 
@@ -141,7 +142,7 @@ def generator():
     )
     return combined_model
 
-def combined_generator(discriminator):
+def combined_generator(generator, discriminator):
     """
     The generator will now receive the discriminator output to train itself, hence the word "combined"
     Implemented using Tensorflow's symbolic tensors
@@ -152,20 +153,19 @@ def combined_generator(discriminator):
     input_audio = keras.Input(shape=(6, 513, 1), name="input_audio_comb")
 
     # This can be considered as the "body" of the ultimate generator, gen is a function.
-    gen = generator()
 
     # Since gen is a function (in discrete sense), it can receive arguments. fake_face is the output of the function.
-    fake_face = gen([input_face, input_audio])
+    fake_face = generator([input_face, input_audio])
     discriminator.trainable = False
     # The discriminator is also a function, so it can receive arguments. d is the output of the function.
-    d = discriminator(fake_face)
+    d = discriminator([fake_face, input_audio])
 
     # This is the ultimate generator which is also a function, starting with the inputs, and the outputs are outputs of both 
     # the generator and the discrinator's outputs
     gan_generator_model = keras.Model([input_face, input_audio], [fake_face, d])
 
     # Now the model is compiled.
-    gan_generator_model.compile(loss=['mae', 'binary_crossentropy'], 
+    gan_generator_model.compile(loss=['mae', tfa.losses.ContrastiveLoss()], 
                             optimizer='adam', loss_weights=[1., .01])
 
     return gan_generator_model
@@ -218,4 +218,4 @@ def test_generate():
 
 
 if __name__ == "__main__":
-    test_generate()
+    id_encoder = identity_encoder()

@@ -9,6 +9,10 @@ import matplotlib.pyplot as plt
 import random
 import os
 import tensorflow as tf
+from tensorflow import keras
+import tensorflow_addons as tfa
+
+from keras import layers, models
 import re
 
 """
@@ -16,28 +20,55 @@ Visual Quality Discriminator Model Definition
 Used to discriminate (hah, get it?) between real and fake images
 Meant to be used as the discriminator
 """
-
 def quality_discriminator(training=True):
     """
     The quality discriminator in all of its glory
     Going to be a combined model of both audio and video.
     The one below now is current the video part.
     """
-    model = tf.keras.models.Sequential([
-        tf.keras.layers.Conv2D(3, 7, 1, activation='relu', input_shape=(256, 256, 3)),
-        tf.keras.layers.Conv2D(32, 5, (1, 2), activation='relu'),
-        tf.keras.layers.Conv2D(64, 5, 2, activation='relu'),
-        tf.keras.layers.Conv2D(128, 5, 2, activation='relu'),
-        tf.keras.layers.Conv2D(256, 3, 2, activation='relu'),
-        tf.keras.layers.Conv2D(512, 3, 2, activation='relu'),
-        tf.keras.layers.Conv2D(512, 3, 1, activation='relu'),
-        tf.keras.layers.MaxPool2D(2, 2),
-        tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(1, activation='sigmoid')
-    ], name="quality_discriminator")
-    # model.summary()
-    model.compile(loss='binary_crossentropy', optimizer='adam')
-    return model
+    # Define image encoding stack
+    image_input = keras.Input(shape=(256, 256, 3), name="input_face_disc")
+
+    x = layers.Conv2D(8, 7, 2, padding="same", activation='relu', input_shape=(256, 256, 3))(image_input)
+    x = tfa.layers.InstanceNormalization()(x)
+    x = layers.Conv2D(16, 5, 2, padding="same", activation='relu')(x)
+    x = tfa.layers.InstanceNormalization()(x)
+    x = layers.Conv2D(32, 3, 2, padding="same", activation='relu')(x)
+    x = tfa.layers.InstanceNormalization()(x)
+    x = layers.Conv2D(64, 3, 2, padding="same", activation='relu')(x)
+    x = tfa.layers.InstanceNormalization()(x)
+    x = layers.Conv2D(64, 3, 2, padding="same", activation='sigmoid')(x)
+
+    image_encoding = layers.Flatten()(x)
+
+    # Define audio encoding stack
+    audio_input = keras.Input(shape=(6, 513, 1), name="input_audio_disc")
+
+    y = layers.Conv2D(16, 7, (1, 3), padding="same", activation='relu', input_shape=(6, 513, 1))(audio_input)
+    y = tfa.layers.InstanceNormalization()(y)
+    y = layers.Conv2D(32, 5, (1, 2), padding="same", activation='relu')(y)
+    y = tfa.layers.InstanceNormalization()(y)
+    y = layers.Conv2D(64, 5, (1, 3), padding="same", activation='relu')(y)
+    y = tfa.layers.InstanceNormalization()(y)
+    y = layers.Conv2D(64, 5, (1, 3), padding="same", activation='relu')(y)
+    y = tfa.layers.InstanceNormalization()(y)
+    y = layers.Conv2D(128, 3, 1, padding="valid", activation='sigmoid')(y)
+
+    audio_encoding = layers.Flatten()(y)
+
+    # L2-normalize the encoding tensors
+    image_encoding = tf.math.l2_normalize(image_encoding, axis=1)
+    audio_encoding = tf.math.l2_normalize(audio_encoding, axis=1)
+
+    # Find euclidean distance between image_encoding and audio_encoding
+    # Essentially trying to detect if the face is saying the audio
+    # Will return nan without the 1e-12 offset due to https://github.com/tensorflow/tensorflow/issues/12071
+    d = tf.norm((image_encoding - audio_encoding) + 1e-12, ord='euclidean', axis=1, keepdims=True)
+
+    discriminator = keras.Model(inputs=[image_input, audio_input], outputs=[d], name="discriminator")
+
+    discriminator.compile(loss=tfa.losses.ContrastiveLoss(), optimizer='adam')
+    return discriminator
 
 """
 Everything from here onwards is for testing purposes only
@@ -283,20 +314,5 @@ def test_train():
 
 
 if __name__ == "__main__":
-    model = load_model()
-
-    save_checkpoint_path = "saved_checkpoints"
-    saved_model_path = os.path.join(project_path, "saved_models", "huy")
-    save_checkpoint_path = os.path.join(project_path, save_checkpoint_path)
-    epochs = 3
-
-    ckpt = tf.train.Checkpoint(model)
-    manager = tf.train.CheckpointManager(ckpt, save_checkpoint_path, max_to_keep=epochs)
-    #model.save(saved_model_path)   # TODO: get dotenv working and make this an env variable.
-    # Comment: I suppose that we won't need the line above then. But I'm gonna comment it out just in case.
-    train()
-    print("Evaluating model")
-    model.evaluate(x_test, y_test)
-
-if __name__ == "__main__":
-    test_train()
+    model = quality_discriminator()
+    model.summary()
