@@ -150,3 +150,6 @@ test_data/
 image_and_text_classifier.png
 test_data/
 generated_images/
+
+.idea/
+batch_data/
