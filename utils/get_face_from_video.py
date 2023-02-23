@@ -6,8 +6,8 @@ import time
 import cv2
 import numpy as np
 from moviepy.editor import *
-from utils.audio_spectrogram import stft_np
-from utils.get_paths import get_path
+from audio_spectrogram import stft_np
+from get_paths import get_path
 from tqdm import tqdm
 
 
@@ -266,5 +266,9 @@ def extract_data(raw_data_path="raw_videos", ds_path="dataset"):
 
 if __name__ == "__main__":
     raw_data_paths, ds_path = get_absolute_paths()
-    for kaggle_partition in raw_data_paths:
+    start_partition = 0
+    end_partition = len(raw_data_paths) - 1
+    for i in range(start_partition, end_partition + 1):
+        print(f"Extracting data from partition {raw_data_paths[i]} starts now:")
+        kaggle_partition = raw_data_paths[i]
         extract_data(kaggle_partition, ds_path)
