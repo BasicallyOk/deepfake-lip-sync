@@ -111,7 +111,7 @@ def generator():
     combined_output = layers.BatchNormalization()(combined_output)
     combined_output = layers.LeakyReLU()(combined_output)
 
-    combined_output = layers.Conv2DTranspose(12, (5, 5), strides=(4, 4), padding='same', use_bias=False)(
+    combined_output = layers.Conv2DTranspose(12, (5, 5), strides=(2, 2), padding='same', use_bias=False)(
         combined_output)
     # assert tf.shape(combined_output) == (None, 128, 128, 12)
     combined_output = layers.BatchNormalization()(combined_output)
