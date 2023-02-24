@@ -220,7 +220,7 @@ def get_path(script_path):
     """
     if os.name == "nt":
         # Unreachable?
-        pattern = r"^(.*\\\\deepfake-lip-sync).*"
+        pattern = r"^(.*\\deepfake-lip-sync).*"
     else:
         pattern = r"(.*/deepfake-lip-sync).*"
     match = re.match(pattern=pattern, string=script_path)
@@ -248,7 +248,7 @@ def pretrained_quality_discriminator(project_path):
 # Second of all, how to restore check points and continuing running from there.
 #               Is there a way to indicate that the checkpoint has been restored?
 
-def restore_checkpoint(model, ckpt, manager, epochs, save_checkpoint_path):
+def restore_checkpoint(ckpt, manager):
     ckpt.restore(manager.latest_checkpoint)
     if manager.latest_checkpoint:
         number = re.match(pattern=r".*(.*(\d)$)", string=str(manager.latest_checkpoint))[1]
@@ -300,7 +300,7 @@ def test_train():
     ckpt = tf.train.Checkpoint(model)
     manager = tf.train.CheckpointManager(ckpt, save_checkpoint_path, max_to_keep=epochs)
 
-    epochs_passed = restore_checkpoint(model, ckpt, manager, epochs, save_checkpoint_path)
+    epochs_passed = restore_checkpoint(ckpt, manager)
     num_loops = epochs - epochs_passed
     print(f"Total epochs: {epochs}\nNumber of epochs gonna be run this session: {num_loops}")
     for epoch in range(num_loops):
