@@ -40,13 +40,12 @@ def identity_encoder():
         tf.keras.layers.InputLayer(input_shape=(256, 256, 6), name="image_input"),
         layers.Conv2D(16, 1, 1, activation='relu'),
         layers.MaxPool2D(32, 2, padding='same'),
-        layers.Conv2D(32, 5, 1, activation='relu'),
+        layers.Conv2D(32, 5, 2, activation='relu'),
         layers.MaxPool2D(64, 2, padding='same'),
-        layers.Conv2D(64, 7, 2, activation='relu'),
-        layers.MaxPool2D(64, 2, padding='same'),
-        layers.Conv2D(64, 7, 2, activation='relu'),
-        tf.keras.layers.Flatten(),
-        tf.keras.layers.Dense(1024, activation='sigmoid')
+        layers.Conv2D(60, 7, 2, activation='relu'),
+        layers.MaxPool2D(64, 1, padding='same'),
+        layers.Conv2D(61, 7, 1, activation='sigmoid', padding='valid'),
+        tf.keras.layers.Flatten(name='identity_encoding'),
     ], name="image")
     return model
 
@@ -68,19 +67,17 @@ def audio_encoder():
 
     model = models.Sequential([
         layers.Input(shape=shape_of_audio_np, name="audio_input"),
-        # Downsample the input.
-        layers.Resizing(55, 55),
         # Normalize.
         norm_layer,
-        layers.Conv2D(3, 3, strides=3, activation='relu'),
+        layers.Conv2D(3, 7, (1, 3), activation='relu', padding='same'),
         layers.BatchNormalization(),
-        layers.Conv2D(9, 3, strides=3, activation='relu'),
+        layers.Conv2D(9, 5, (1, 3), activation='relu', padding='same'),
         layers.BatchNormalization(),
-        layers.Conv2D(30, 3, strides=1, activation='relu'),
+        layers.Conv2D(30, 3, 3, activation='relu', padding='same'),
         layers.BatchNormalization(),
         layers.MaxPooling2D(),
-        layers.Flatten(),
-        layers.Dense(128, activation='relu'),
+        layers.Conv2D(123, 1, 1, activation='sigmoid', padding='valid'),
+        layers.Flatten(name='audio_encoding'),
     ], name="audio")
     # model.summary()
     return model
@@ -99,11 +96,12 @@ def generator():
     # combined_output = layers.Conv2DTranspose(filters=3, kernel_size=[5, 5], strides=[1, 1], padding="SAME",
     #                                          kernel_initializer=tf.keras.initializers.TruncatedNormal(stddev=WEIGHT_INIT_STDDEV),
     #                                          name="logits")(x)
-    combined_output = layers.Dense(8 * 8 * 18, use_bias=False)(x)
-    combined_output = layers.BatchNormalization()(combined_output)
+    # combined_output = layers.Dense(16*16*16, use_bias=False)(x)
+    # combined_output = layers.BatchNormalization()(combined_output)
+    combined_output = layers.BatchNormalization()(x)
     combined_output = layers.LeakyReLU()(combined_output)
 
-    combined_output = layers.Reshape((8, 8, 18))(combined_output)
+    combined_output = layers.Reshape((16, 16, 16))(combined_output)
     # assert tf.shape(combined_output) == (None, 16, 16, 768)  # Note: None is the batch size
 
     combined_output = layers.Conv2DTranspose(18, (5, 5), strides=(2, 2), padding='same', use_bias=False)(
