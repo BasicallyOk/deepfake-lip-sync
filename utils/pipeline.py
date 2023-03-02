@@ -3,6 +3,7 @@ import re
 import random
 import json
 from get_paths import get_path
+from dotenv import load_dotenv
 
 
 def choosing_data_for_batch(batch_num: int, batch_size: int, data_path: str, save_location: str):
@@ -62,17 +63,16 @@ def choosing_data_for_batch(batch_num: int, batch_size: int, data_path: str, sav
 
 
 if __name__ == "__main__":
+    load_dotenv()
     project_path = get_path()
-    file_name = "batches.json"
     # batches.json should now be saved into batch_data folder of this project.
-    save_path = os.path.join(project_path, "batch_data")
+    save_path = os.environ.get("BATCH_DATA_PATH")
+    data_path = os.environ.get("DATASET_PATH")
     # Make the folder if it doesn't exist.
     if os.path.exists(save_path) is False:
         os.makedirs(save_path, exist_ok=True)
-    save_path = os.path.join(save_path, file_name)
-    data_path = os.path.join(project_path, "dataset", "train", "real")
     print(save_path)
-    choosing_data_for_batch(batch_num=20000, batch_size=100,
+    choosing_data_for_batch(batch_num=10000, batch_size=100,
                             data_path=data_path,
                             save_location=save_path)
 
