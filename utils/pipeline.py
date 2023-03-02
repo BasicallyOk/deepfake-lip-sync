@@ -31,8 +31,8 @@ def choosing_data_for_batch(batch_num: int, batch_size: int, data_path: str, sav
     for dirname, _, filenames in os.walk(data_path):
         for filename in filenames:
             if match := re.match(pattern=img_pattern, string=filename):
-                #full_path = match.group(1)
-                full_path = os.path.join(data_path, match.group(1))
+                full_path = match.group(1)
+                # full_path = os.path.join(data_path, match.group(1))
                 file_no_num = match.group(2)
                 if file_no_num not in list_of_fps_dict.keys():
                     list_of_fps_dict[file_no_num] = {full_path}
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     if os.path.exists(save_path) is False:
         os.makedirs(save_path, exist_ok=True)
     print(save_path)
-    choosing_data_for_batch(batch_num=10000, batch_size=100,
+    choosing_data_for_batch(batch_num=40000, batch_size=100,
                             data_path=data_path,
                             save_location=save_path)
 
