@@ -30,9 +30,9 @@ sorted_keys = []
 mp4_files = []
 
 # Ratio between raw_videos and test
-train_ratio = 3
-test_ratio = 0
-valid_ratio = 0
+# train_ratio = 3
+# test_ratio = 0
+# valid_ratio = 0
 
 
 def detect_if_structure_exists(dataset_path):
@@ -86,7 +86,7 @@ def get_meta_dict(metafile_path):
     return meta_dict
 
 
-def capture_video(dataset_path: str, vid_dest: str, meta_dict: dict):
+def capture_video(dataset_path: str, vid_dest: str, meta_dict: dict, train_ratio, test_ratio, valid_ratio):
     """
     Go through the video using its path and process every frame in that video.
     May also extract the audio piece too.
@@ -134,7 +134,7 @@ def capture_video(dataset_path: str, vid_dest: str, meta_dict: dict):
                 results = detect_face_add_labels_get_audio(frame=frame, audio=audio,
                                                            source_video_name=source_video, counter=counter,
                                                            frame_time=frame_time, dataset_path=dataset_path,
-                                                           label=label)
+                                                           label=label, train_ratio=train_ratio, test_ratio=test_ratio, valid_ratio=valid_ratio)
                 if results is not None:
                     face = results[0]
                     audio_np = results[1]
@@ -155,7 +155,7 @@ def capture_video(dataset_path: str, vid_dest: str, meta_dict: dict):
 
 
 def detect_face_add_labels_get_audio(frame, audio, source_video_name: str,
-                                     counter: int, frame_time, dataset_path, label):
+                                     counter: int, frame_time, dataset_path, label, train_ratio, test_ratio, valid_ratio):
     """
     Crop and resize only the frontal face detection the pretrained model uses.
     Will also label the frame as either 0 (FAKE) or 1 (REAL) according to the metadata file.
@@ -242,7 +242,7 @@ def get_absolute_paths(raw_data_folder="raw_videos", ds_folder="dataset"):
     return raw_data_paths[1:], ds_path
 
 
-def extract_data(raw_data_path="raw_videos", ds_path="dataset"):
+def extract_data(raw_data_path="raw_videos", ds_path="dataset", train_ratio=1, test_ratio=0, valid_ratio=0):
     """
     Must use absolute pathing. Only works for one partition of the kaggle set at a time.
     raw_data_path: the absolute path to the partition of Kaggle's deepfake detection dataset.
@@ -259,7 +259,7 @@ def extract_data(raw_data_path="raw_videos", ds_path="dataset"):
     for i in tqdm(range(num_videos), total=num_videos, unit='file', position=0):
         start_time = time.time()
         # Get the numpy representations of faces and audios corresponding to it for each video.
-        faces, audios = capture_video(ds_path, mp4_file_paths[i], meta_dictionary)
+        faces, audios = capture_video(ds_path, mp4_file_paths[i], meta_dictionary, train_ratio, test_ratio, valid_ratio)
         # print(
             # f"----- Video {mp4_file_paths[i]} done. {i + 1} out of {num_videos} out of a total of {len(mp4_file_paths)}"
             # f". {time.time() - start_time} seconds -----")
