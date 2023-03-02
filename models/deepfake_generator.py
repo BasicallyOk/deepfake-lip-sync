@@ -96,9 +96,9 @@ def generator():
     # combined_output = layers.Conv2DTranspose(filters=3, kernel_size=[5, 5], strides=[1, 1], padding="SAME",
     #                                          kernel_initializer=tf.keras.initializers.TruncatedNormal(stddev=WEIGHT_INIT_STDDEV),
     #                                          name="logits")(x)
-    # combined_output = layers.Dense(16*16*16, use_bias=False)(x)
-    # combined_output = layers.BatchNormalization()(combined_output)
-    combined_output = layers.BatchNormalization()(x)
+    combined_output = layers.Dense(16*16*16, use_bias=False)(x)
+    combined_output = layers.BatchNormalization()(combined_output)
+    # combined_output = layers.BatchNormalization()(x)
     combined_output = layers.LeakyReLU()(combined_output)
 
     combined_output = layers.Reshape((16, 16, 16))(combined_output)
