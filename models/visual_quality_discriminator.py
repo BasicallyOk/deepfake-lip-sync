@@ -28,7 +28,7 @@ def quality_discriminator(training=True):
     """
     # Define image encoding stack
     image_input = keras.Input(shape=(256, 256, 3), name="input_face_disc")
-
+    image_input = layers.GaussianNoise(0.5) (image_input)
     x = layers.Conv2D(8, 7, 2, padding="same", activation='relu', input_shape=(256, 256, 3))(image_input)
     x = tfa.layers.InstanceNormalization()(x)
     x = layers.Conv2D(16, 5, 2, padding="same", activation='relu')(x)

@@ -72,7 +72,7 @@ if __name__ == "__main__":
     if os.path.exists(save_path) is False:
         os.makedirs(save_path, exist_ok=True)
     print(save_path)
-    choosing_data_for_batch(batch_num=40000, batch_size=100,
+    choosing_data_for_batch(batch_num=20000, batch_size=100,
                             data_path=data_path,
                             save_location=save_path)
 
