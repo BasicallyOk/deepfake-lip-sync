@@ -1,0 +1,11 @@
+ipykernel
+numpy
+tensorflow
+matplotlib
+tqdm
+scipy
+pillow
+python-dotenv
+librosa
+# opencv only required for preprocessing
+# opencv-python
