@@ -12,3 +12,6 @@ TEST_DATASET_PATH=./dataset/test/
 MODEL_NAME="contrastive_loss_noisy20000"
 ```
 
+## Credits
+Some of the code were written in a different repository that has now been nuked.
+I owe a lot of the data processing pipeline to [@HueyAmiNhvtim](https://github.com/HueyAmiNhvtim) and [@Blinco0](https://github.com/Blinco0).
