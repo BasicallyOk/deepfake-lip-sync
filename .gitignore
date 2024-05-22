@@ -153,5 +153,5 @@ generated_images/
 
 .idea/
 batch_data/
-trained_models/*
+trained_models/
 logs/

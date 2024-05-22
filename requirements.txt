@@ -1,6 +1,8 @@
 ipykernel
 numpy
-tensorflow
+tensorflow[and-cuda]==2.15.0 # if cuda is applicable to your system
+# if the above fails, do:
+# python -m pip install "tensorflow[and-cuda]==2.15" --extra-index-url https://pypi.nvidia.com
 matplotlib
 tqdm
 scipy
